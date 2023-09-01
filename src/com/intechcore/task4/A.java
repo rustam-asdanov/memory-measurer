@@ -4,7 +4,8 @@ public class A {
     boolean check;
     char sign;
     B b;
-
     C c;
+    static int s;
+
 
 }

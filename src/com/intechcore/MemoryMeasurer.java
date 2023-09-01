@@ -1,12 +1,13 @@
 package com.intechcore;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
 public class MemoryMeasurer {
 
-    private static Set<Object> usedObjects = new HashSet<>();
+    private static Set<Object> usedReferencesOfObjects = new HashSet<>();
 
     /**
      * Method measure memory of object. It calculates all variables include references inside of it.
@@ -16,7 +17,7 @@ public class MemoryMeasurer {
      * @return total size of the object
      */
     public static long measure(Object myObject) {
-        usedObjects.add(myObject);
+        usedReferencesOfObjects.add(myObject);
         long totalSize = 0;
         Field[] declaredFields = myObject.getClass().getDeclaredFields();
 
@@ -26,16 +27,21 @@ public class MemoryMeasurer {
             Class<?> fieldType = declaredField.getType();
             String result = fieldType.getName();
 
+
             try {
+
                 Object reference = declaredField.get(myObject);
+
+                // We check here is the variable static or not
+                if(Modifier.isStatic(declaredField.getModifiers())) continue;
 
                 totalSize += sizeByType(result);
 
                 if (reference != null
                         && !fieldType.isPrimitive()
-                        && !usedObjects.contains(reference)) {
+                        && !usedReferencesOfObjects.contains(reference)) {
 
-                    usedObjects.add(reference);
+                    usedReferencesOfObjects.add(reference);
                     totalSize += measure(reference);
                 }
 
