@@ -1,8 +1,6 @@
 package com.intechcore;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 
 public class MemoryMeasurer {
@@ -29,6 +27,7 @@ public class MemoryMeasurer {
         sizeByType.put(int.class, 4);
         sizeByType.put(float.class, 4);
         sizeByType.put(double.class, 8);
+        sizeByType.put(String.class, 8);
 
         return measure(data, totalSize);
     }
@@ -42,13 +41,8 @@ public class MemoryMeasurer {
             declaredField.setAccessible(true);
             try {
                 reference = declaredField.get(data);
-                if (Modifier.isStatic(declaredField.getModifiers())) continue;
 
-                if (declaredField.getType().isPrimitive()) totalSize += sizeByType.get(declaredField.getType());
-                else if (isArray(reference)) {
-                    System.out.println(reference.getClass().getComponentType());
-                    totalSize += 8 + (long) getArrayLength(reference) * sizeByType.get(reference.getClass().getComponentType());
-                } else totalSize += 8;
+                totalSize = getCalculatedSizeByType(declaredField, totalSize);
 
                 if (reference != null
                         && !usedReferencesOfObjects.containsKey(reference)
@@ -62,7 +56,20 @@ public class MemoryMeasurer {
 
         }
 
+        return totalSize;
+    }
 
+    private static long getCalculatedSizeByType(Field declaredField, long totalSize) {
+        if (Modifier.isStatic(declaredField.getModifiers())) return totalSize;
+        else if (declaredField.getType() == String.class) {
+            totalSize += 8 + getStringLength(reference.toString()) * sizeByType.get(char.class);
+        } else if (isArray(reference)) {
+            totalSize += 8 + getArrayLength(reference) * sizeByType.get(reference.getClass().getComponentType());
+        } else if (declaredField.getType().isPrimitive()) {
+            totalSize += sizeByType.get(declaredField.getType());
+        } else {
+            totalSize += 8;
+        }
         return totalSize;
     }
 
@@ -70,12 +77,22 @@ public class MemoryMeasurer {
         return obj != null && obj.getClass().isArray();
     }
 
-    public static int getArrayLength(Object array) {
+    private static long getArrayLength(Object array) {
         if (array == null || !array.getClass().isArray()) {
             throw new IllegalArgumentException("Input is not an array.");
         }
         return Array.getLength(array);
     }
 
+    private static long getStringLength(Object s) {
+        long length = 0;
+        try {
+            Method lengthMethod = String.class.getMethod("length");
+            length = (int) lengthMethod.invoke(s);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        return length;
+    }
 }
 
