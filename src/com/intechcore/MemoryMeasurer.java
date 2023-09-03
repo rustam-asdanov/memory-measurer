@@ -3,35 +3,20 @@ package com.intechcore;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MemoryMeasurer {
 
     private static Object reference;
     private static Field[] declaredFields;
-    private static final Set<Object> usedReferencesOfObjects = new HashSet<>();
-
+    private static final IdentityHashMap<Object, String> usedReferencesOfObjects = new IdentityHashMap<>();
     private static final Map<Class<?>, Integer> sizeByType = new HashMap<>();
-
-    private static long sizeByType(String typeName) {
-        Map<String, Integer> sizeByType = new HashMap<>();
-        sizeByType.put("boolean", 1);
-        sizeByType.put("byte", 1);
-        sizeByType.put("char", 2);
-        sizeByType.put("short", 2);
-        sizeByType.put("int", 4);
-        sizeByType.put("float", 4);
-
-        return sizeByType.getOrDefault(typeName, 8);
-    }
 
     /**
      * Method measure memory of object. It calculates all variables include references inside of it.
-     * If there are "not null" references in that case it goes deeply inside of inner object and
+     * If there are "not null" references in that case it goes deeply inside inner object and
      * calculate its memory also. It doesn't work with dynamic objects(string, collections).
+     *
      * @param data given object for measurement
      * @return total size of the object
      */
@@ -49,8 +34,8 @@ public class MemoryMeasurer {
     }
 
     public static long measure(Object data, long totalSize) {
-        if (usedReferencesOfObjects.contains(data) || data == null) return totalSize;
-        usedReferencesOfObjects.add(data);
+        if (usedReferencesOfObjects.containsKey(data) || data == null) return totalSize;
+        usedReferencesOfObjects.put(data, data.toString());
 
         declaredFields = data.getClass().getDeclaredFields();
         for (Field declaredField : declaredFields) {
@@ -59,16 +44,14 @@ public class MemoryMeasurer {
                 reference = declaredField.get(data);
                 if (Modifier.isStatic(declaredField.getModifiers())) continue;
 
-                System.out.println(sizeByType.containsKey(declaredField.getType()));
                 if (declaredField.getType().isPrimitive()) totalSize += sizeByType.get(declaredField.getType());
-                else if(isArray(reference)){
+                else if (isArray(reference)) {
                     System.out.println(reference.getClass().getComponentType());
                     totalSize += 8 + (long) getArrayLength(reference) * sizeByType.get(reference.getClass().getComponentType());
-                }
-                else totalSize += 8;
+                } else totalSize += 8;
 
                 if (reference != null
-                        && !usedReferencesOfObjects.contains(reference)
+                        && !usedReferencesOfObjects.containsKey(reference)
                         && !sizeByType.containsKey(declaredField.getType())) {
                     totalSize = measure(reference, totalSize);
                 }
