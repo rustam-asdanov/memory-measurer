@@ -10,9 +10,9 @@ public class MemoryMeasurerTest {
     @Test
     public void shouldMeasureThreeObjectsMemory(){
         C c = new C();
-//        c.a = new A();
-//        c.b = new B();
-        assertEquals(55, MemoryMeasurer.measure(c));
+        c.a = new A();
+        c.b = new B();
+        assertEquals(127, MemoryMeasurer.measure(c));
     }
 
     @Test
@@ -24,7 +24,7 @@ public class MemoryMeasurerTest {
         c.a.c = new C();
         c.a.c.a = c.a;
         c.a.c.b = c.b;
-        assertEquals(91, MemoryMeasurer.measure(c));
+        assertEquals(235, MemoryMeasurer.measure(c));
     }
 
     @Test
@@ -36,7 +36,7 @@ public class MemoryMeasurerTest {
         c.a.c = new C();
         c.a.c.b = c.a.b;
         c.a.b = new B();
-        assertEquals(103, MemoryMeasurer.measure(c));
+        assertEquals(247, MemoryMeasurer.measure(c));
     }
 
 }
