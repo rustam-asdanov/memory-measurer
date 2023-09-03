@@ -8,7 +8,16 @@ public class MemoryMeasurer {
     private static Object reference;
     private static Field[] declaredFields;
     private static final IdentityHashMap<Object, String> usedReferencesOfObjects = new IdentityHashMap<>();
-    private static final Map<Class<?>, Integer> sizeByType = new HashMap<>();
+    private static final Map<Class<?>, Integer> sizeByType = Map.of(
+            boolean.class, 1,
+            byte.class, 1,
+            char.class, 2,
+            short.class, 2,
+            int.class, 4,
+            float.class, 4,
+            double.class, 8,
+            String.class, 8
+    );
 
     /**
      * Method measure memory of object. It calculates all variables include references inside of it.
@@ -20,14 +29,6 @@ public class MemoryMeasurer {
      */
     public static long measure(Object data) {
         long totalSize = 0;
-        sizeByType.put(boolean.class, 1);
-        sizeByType.put(byte.class, 1);
-        sizeByType.put(char.class, 2);
-        sizeByType.put(short.class, 2);
-        sizeByType.put(int.class, 4);
-        sizeByType.put(float.class, 4);
-        sizeByType.put(double.class, 8);
-        sizeByType.put(String.class, 8);
 
         return measure(data, totalSize);
     }
@@ -42,7 +43,12 @@ public class MemoryMeasurer {
             try {
                 reference = declaredField.get(data);
 
+
+//                System.out.println(reference.getClass().getComponentType());
+
                 totalSize = getCalculatedSizeByType(declaredField, totalSize);
+
+                System.out.println(reference + " " + totalSize);
 
                 if (reference != null
                         && !usedReferencesOfObjects.containsKey(reference)
@@ -62,9 +68,9 @@ public class MemoryMeasurer {
     private static long getCalculatedSizeByType(Field declaredField, long totalSize) {
         if (Modifier.isStatic(declaredField.getModifiers())) return totalSize;
         else if (declaredField.getType() == String.class) {
-            totalSize += 8 + getStringLength(reference.toString()) * sizeByType.get(char.class);
+            totalSize += 8 + (long) reference.toString().length() * sizeByType.get(char.class);
         } else if (isArray(reference)) {
-            totalSize += 8 + getArrayLength(reference) * sizeByType.get(reference.getClass().getComponentType());
+            totalSize = getArraySize(totalSize);
         } else if (declaredField.getType().isPrimitive()) {
             totalSize += sizeByType.get(declaredField.getType());
         } else {
@@ -84,15 +90,30 @@ public class MemoryMeasurer {
         return Array.getLength(array);
     }
 
-    private static long getStringLength(Object s) {
-        long length = 0;
-        try {
-            Method lengthMethod = String.class.getMethod("length");
-            length = (int) lengthMethod.invoke(s);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+    private static long getArraySize(long totalSize) {
+        Class<?> type = reference.getClass().getComponentType();
+        if(type.isPrimitive()){
+            totalSize += 8 + getArrayLength(reference) * sizeByType.get(reference.getClass().getComponentType());
+        } else {
+            totalSize += 8 + getArrayLength(reference) * sizeByType.getOrDefault(type, 8) + getCombinedStringArrayLength((String[]) reference) * sizeByType.get(char.class);
         }
-        return length;
+
+        return totalSize;
     }
+
+    private static long getCombinedStringArrayLength(String[] arrayOfString) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String str : arrayOfString) {
+            if (str != null) {
+                stringBuilder.append(str);
+            }
+        }
+
+        System.out.println("string builder " + stringBuilder);
+
+
+        return stringBuilder.toString().length();
+    }
+
 }
 

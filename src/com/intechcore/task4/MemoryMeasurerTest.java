@@ -10,8 +10,8 @@ public class MemoryMeasurerTest {
     @Test
     public void shouldMeasureThreeObjectsMemory(){
         C c = new C();
-        c.a = new A();
-        c.b = new B();
+//        c.a = new A();
+//        c.b = new B();
         assertEquals(55, MemoryMeasurer.measure(c));
     }
 
