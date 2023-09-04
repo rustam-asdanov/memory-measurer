@@ -21,9 +21,10 @@ public class MemoryMeasurer {
     );
 
     /**
-     * Method measure memory of object. It calculates all variables include references inside of it.
-     * If there are "not null" references in that case it goes deeply inside inner object and
-     * calculate its memory also. It doesn't work with dynamic objects(collections).
+     *
+     * The method measures the memory of an object by calculating all variables, including references
+     * inside it. If there are 'not null' references, it recursively calculates the memory of inner
+     * objects as well. However, it does not work with dynamic objects (collections) or arrays of objects.
      *
      * @param data given object for measurement
      * @return total size of the object
@@ -34,7 +35,7 @@ public class MemoryMeasurer {
         return measure(data, totalSize);
     }
 
-    public static long measure(Object data, long totalSize) {
+    private static long measure(Object data, long totalSize) {
         if (usedReferencesOfObjects.containsKey(data) || data == null) return totalSize;
         usedReferencesOfObjects.put(data, data.toString());
 
@@ -43,8 +44,6 @@ public class MemoryMeasurer {
             declaredField.setAccessible(true);
             try {
                 reference = declaredField.get(data);
-
-
                 totalSize = getCalculatedSizeByType(declaredField, totalSize);
 
                 if (reference != null
@@ -65,12 +64,12 @@ public class MemoryMeasurer {
     private static long getCalculatedSizeByType(Field declaredField, long totalSize) {
         if (Modifier.isStatic(declaredField.getModifiers())) {
             return totalSize;
-        } else if (declaredField.getType() == String.class) {
+        } else if (declaredField.getType().isPrimitive()) {
+            totalSize += sizeByType.get(declaredField.getType());
+        } else if (declaredField.getType() == String.class && reference != null) {
             totalSize += 8 + (long) reference.toString().length() * sizeByType.get(char.class);
         } else if (isArray(reference)) {
             totalSize = getArraySize(totalSize);
-        } else if (declaredField.getType().isPrimitive()) {
-            totalSize += sizeByType.get(declaredField.getType());
         } else {
             totalSize += 8;
         }

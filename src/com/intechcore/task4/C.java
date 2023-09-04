@@ -1,13 +1,13 @@
 package com.intechcore.task4;
 
 public class C {
-    double number; // 8
+    double number;
 
-    String name = "cart"; // 8+8+4*2=24
+    private final String item = "cart";
 
-    String[] names = {"carts", "boxes"}; // 24+8+8+8 + 10*2 = 68
+    private final String[] items = {"carts", "boxes"};
 
-    int[] array = new int[1];
+    private final int[] numbers = new int[1];
     A a;
     B b;
 }
